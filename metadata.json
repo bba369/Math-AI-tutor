@@ -1,0 +1,6 @@
+{
+  "name": "Smart Math Tutor (स्मार्ट म्याथ ट्युटर)",
+  "description": "एउटा बुद्धिमानी गणित शिक्षक जसले विद्यार्थीको क्षमता जाँचेर उचित प्रतिक्रिया दिन्छ।",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Schema Validations ---
+    function isValidBite(bite) {
+      return bite is map &&
+        bite.keys().hasAll(['id', 'concept', 'task', 'hint', 'options', 'correctIndex']) &&
+        bite.id is number &&
+        bite.concept is string && bite.concept.size() <= 2000 &&
+        bite.task is string && bite.task.size() <= 2000 &&
+        bite.hint is string && bite.hint.size() <= 1000 &&
+        bite.options is list && bite.options.size() >= 2 &&
+        bite.correctIndex is number;
+    }
+
+    function isValidSharedLevel(data) {
+      return data is map &&
+        data.keys().hasAll(['topicId', 'levelNum', 'title', 'bites', 'creatorId', 'creatorName', 'createdAt']) &&
+        data.topicId is string &&
+        data.levelNum is number &&
+        data.title is string && data.title.size() <= 200 &&
+        data.bites is list && data.bites.size() > 0 &&
+        data.creatorId == request.auth.uid &&
+        data.creatorName is string &&
+        data.createdAt == request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data is map &&
+        data.keys().hasAll(['uid', 'name', 'points', 'streak', 'mastery', 'badges', 'generatedCount']) &&
+        data.uid == request.auth.uid &&
+        data.name is string && data.name.size() <= 100 &&
+        data.points is number &&
+        data.streak is number &&
+        data.mastery is list && data.mastery.size() <= 500 &&
+        data.badges is list && data.badges.size() <= 100 &&
+        data.generatedCount is number;
+    }
+
+    // --- Collection Rules ---
+
+    match /shared_levels/{levelKey} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidId(levelKey) && isValidSharedLevel(incoming());
+      // Shared content is immutable to prevent tampering
+      allow update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn(); // Allow reading profiles for community feel, but private data should be handled
+      allow create: if isOwner(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && 
+                      isValidUserProfile(incoming()) && 
+                      incoming().uid == existing().uid; // UID IMMUTABLE
+      allow delete: if false;
+    }
+  }
+}

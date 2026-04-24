@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "Bite": {
+      "title": "Bite",
+      "description": "A small learning concept and interactive task",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "concept": { "type": "string" },
+        "task": { "type": "string" },
+        "hint": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "correctIndex": { "type": "number" }
+      },
+      "required": ["id", "concept", "task", "hint", "options", "correctIndex"]
+    },
+    "SharedLevel": {
+      "title": "Shared Level",
+      "description": "AI generated level content shared by students",
+      "type": "object",
+      "properties": {
+        "topicId": { "type": "string" },
+        "levelNum": { "type": "number" },
+        "title": { "type": "string" },
+        "bites": { "type": "array", "items": { "$ref": "Bite" } },
+        "creatorId": { "type": "string" },
+        "creatorName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["topicId", "levelNum", "title", "bites", "creatorId", "creatorName", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Student profile and progress",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "points": { "type": "number" },
+        "streak": { "type": "number" },
+        "mastery": { "type": "array", "items": { "type": "string" } },
+        "badges": { "type": "array", "items": { "type": "string" } },
+        "generatedCount": { "type": "number" }
+      },
+      "required": ["uid", "name", "points", "streak", "mastery", "badges"]
+    }
+  },
+  "firestore": {
+    "/shared_levels/{levelKey}": {
+      "schema": "SharedLevel",
+      "description": "Collection of AI-generated math levels shared across all students"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Individual student progress and awards"
+    }
+  }
+}
